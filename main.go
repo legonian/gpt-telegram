@@ -26,7 +26,10 @@ func main() {
 }
 
 func app() error {
-	chatGPT := NewChatGPT(os.Getenv("OPEN_AI_KEY"))
+	chatGPT, err := NewChatGPT(os.Getenv("OPEN_AI_KEY"))
+	if err != nil {
+		return fmt.Errorf("NewChatGPT: %w", err)
+	}
 
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_BOT_TOKEN"))
 	if err != nil {

@@ -3,28 +3,33 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 
 	openai "github.com/sashabaranov/go-openai"
 )
 
-const defaultmessageLimit = 1000
+const promptPrefixFile = "./prompt_prefix.txt"
 
 type ChatGPT struct {
-	messageLimit int
+	promptPrefix string
 	client       *openai.Client
 }
 
-func NewChatGPT(apiKey string) *ChatGPT {
-	return &ChatGPT{
-		messageLimit: defaultmessageLimit,
-		client:       openai.NewClient(apiKey),
+func NewChatGPT(apiKey string) (*ChatGPT, error) {
+	promptPrefix, err := os.ReadFile(promptPrefixFile)
+	if err != nil {
+		return nil, fmt.Errorf("os.ReadFile: %w", err)
 	}
+
+	return &ChatGPT{
+		promptPrefix: string(promptPrefix),
+		client:       openai.NewClient(apiKey),
+	}, nil
 }
 
 func (cg *ChatGPT) GenerateResponse(ctx context.Context, prompt string) (string, error) {
-	if cg.messageLimit < len(prompt) {
-		return "", fmt.Errorf("prompt is to big: %v", len(prompt))
-	}
+	prompt = cg.promptPrefix + prompt
 
 	resp, err := cg.client.CreateChatCompletion(ctx,
 		openai.ChatCompletionRequest{
@@ -42,5 +47,18 @@ func (cg *ChatGPT) GenerateResponse(ctx context.Context, prompt string) (string,
 		return "", fmt.Errorf("cg.client.CreateChatCompletion: %w", err)
 	}
 
-	return resp.Choices[0].Message.Content, nil
+	result := resp.Choices[0].Message.Content
+	result = cg.ResponceFilter(result)
+
+	return result, nil
+}
+
+func (cg *ChatGPT) ResponceFilter(responce string) string {
+	divided := strings.Split(responce, "BasedGPT: ")
+
+	if len(divided) == 2 {
+		return divided[1]
+	}
+
+	return responce
 }
