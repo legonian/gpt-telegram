@@ -11,6 +11,8 @@ import (
 )
 
 func main() {
+	log.Printf("Starting...")
+
 	err := app()
 	if err != nil {
 		log.Fatalf("app: %v", err)
