@@ -29,7 +29,17 @@ func NewChatGPT(apiKey string) (*ChatGPT, error) {
 }
 
 func (cg *ChatGPT) GenerateResponse(ctx context.Context, prompt string) (string, error) {
-	prompt = cg.promptPrefix + prompt
+	isBased := false
+	switch {
+	case strings.HasPrefix(prompt, "gpt "):
+		prompt = strings.TrimPrefix(prompt, "gpt ")
+	case strings.HasPrefix(prompt, "basedgpt "):
+		isBased = true
+		prompt = strings.TrimPrefix(prompt, "basedgpt ")
+		prompt = cg.promptPrefix + prompt
+	default:
+		return "", fmt.Errorf("no prefix")
+	}
 
 	resp, err := cg.client.CreateChatCompletion(ctx,
 		openai.ChatCompletionRequest{
@@ -47,18 +57,15 @@ func (cg *ChatGPT) GenerateResponse(ctx context.Context, prompt string) (string,
 		return "", fmt.Errorf("cg.client.CreateChatCompletion: %w", err)
 	}
 
-	result := resp.Choices[0].Message.Content
-	result = cg.ResponceFilter(result)
+	responce := resp.Choices[0].Message.Content
 
-	return result, nil
-}
+	if isBased {
+		divided := strings.Split(responce, "BasedGPT: ")
 
-func (cg *ChatGPT) ResponceFilter(responce string) string {
-	divided := strings.Split(responce, "BasedGPT: ")
-
-	if len(divided) == 2 {
-		return divided[1]
+		if len(divided) == 2 {
+			responce = divided[1]
+		}
 	}
 
-	return responce
+	return responce, nil
 }

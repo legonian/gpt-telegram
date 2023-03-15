@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
@@ -48,11 +47,7 @@ func app() error {
 		if update.Message == nil || update.Message.Text == "" {
 			continue
 		}
-		if !strings.HasPrefix(update.Message.Text, "gpt ") {
-			continue
-		}
-
-		messageText := strings.TrimPrefix(update.Message.Text, "gpt ")
+		messageText := update.Message.Text
 
 		log.Printf("[%s] (%v) '%v'",
 			update.Message.From.UserName,
@@ -63,7 +58,7 @@ func app() error {
 		reply, err := chatGPT.GenerateResponse(ctx, messageText)
 		if err != nil {
 			log.Printf("(%v) %v", update.UpdateID, err)
-			reply = "GPT error"
+			continue
 		}
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, reply)
 		msg.ReplyToMessageID = update.Message.MessageID
