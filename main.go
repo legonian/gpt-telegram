@@ -13,17 +13,18 @@ import (
 func main() {
 	log.Printf("Starting...")
 
-	err := app()
+	err := godotenv.Load()
+	if err != nil {
+		log.Printf("godotenv.Load: %v", err)
+	}
+
+	err = app()
 	if err != nil {
 		log.Fatalf("app: %v", err)
 	}
 }
 
 func app() error {
-	err := godotenv.Load()
-	if err != nil {
-		return fmt.Errorf("godotenv.Load: %w", err)
-	}
 	chatGPT := NewChatGPT(os.Getenv("OPEN_AI_KEY"))
 
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_BOT_TOKEN"))
