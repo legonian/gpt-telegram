@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	openai "github.com/sashabaranov/go-openai"
@@ -18,6 +20,9 @@ type ChatMode interface {
 	HandlePrompt(string) string
 	HandleResponse(string) string
 }
+
+var ErrInvalidPrompt = errors.New("invalid prompt")
+var ErrAPI = fmt.Errorf("API error")
 
 func NewChatGPT(apiKey string) (*ChatGPT, error) {
 	defaultMode := NewDefaultMode()
@@ -55,7 +60,7 @@ func (cg *ChatGPT) GenerateResponse(ctx context.Context, prompt string) (string,
 		responseHandler = m.HandleResponse
 	}
 	if responseHandler == nil {
-		return "", fmt.Errorf("no prefix")
+		return "", ErrInvalidPrompt
 	}
 
 	resp, err := cg.client.CreateChatCompletion(ctx,
@@ -70,7 +75,8 @@ func (cg *ChatGPT) GenerateResponse(ctx context.Context, prompt string) (string,
 		},
 	)
 	if err != nil {
-		return "", fmt.Errorf("cg.client.CreateChatCompletion: %w", err)
+		log.Printf("cg.client.CreateChatCompletion: %v", err)
+		return "", ErrAPI
 	}
 
 	responce := resp.Choices[0].Message.Content

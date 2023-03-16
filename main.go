@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -57,8 +58,10 @@ func app() error {
 
 		reply, err := chatGPT.GenerateResponse(ctx, messageText)
 		if err != nil {
-			log.Printf("(%v) %v", update.UpdateID, err)
-			continue
+			if !errors.Is(err, ErrAPI) {
+				continue
+			}
+			reply = "API error"
 		}
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, reply)
 		msg.ReplyToMessageID = update.Message.MessageID
