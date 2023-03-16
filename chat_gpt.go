@@ -3,41 +3,58 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	openai "github.com/sashabaranov/go-openai"
 )
 
-const promptPrefixFile = "./prompt_prefix.txt"
-
 type ChatGPT struct {
-	promptPrefix string
-	client       *openai.Client
+	modes  []ChatMode
+	client *openai.Client
+}
+
+type ChatMode interface {
+	Prefix() string
+	HandlePrompt(string) string
+	HandleResponse(string) string
 }
 
 func NewChatGPT(apiKey string) (*ChatGPT, error) {
-	promptPrefix, err := os.ReadFile(promptPrefixFile)
+	defaultMode := NewDefaultMode()
+
+	basedMode, err := NewBasedMode()
 	if err != nil {
-		return nil, fmt.Errorf("os.ReadFile: %w", err)
+		return nil, fmt.Errorf("NewBasedMode: %w", err)
+	}
+
+	antiMode, err := NewAntiMode()
+	if err != nil {
+		return nil, fmt.Errorf("NewAntiMode: %w", err)
 	}
 
 	return &ChatGPT{
-		promptPrefix: string(promptPrefix),
-		client:       openai.NewClient(apiKey),
+		client: openai.NewClient(apiKey),
+		modes: []ChatMode{
+			defaultMode,
+			basedMode,
+			antiMode,
+		},
 	}, nil
 }
 
 func (cg *ChatGPT) GenerateResponse(ctx context.Context, prompt string) (string, error) {
-	isBased := false
-	switch {
-	case strings.HasPrefix(prompt, "gpt "):
-		prompt = strings.TrimPrefix(prompt, "gpt ")
-	case strings.HasPrefix(prompt, "basedgpt "):
-		isBased = true
-		prompt = strings.TrimPrefix(prompt, "basedgpt ")
-		prompt = cg.promptPrefix + prompt
-	default:
+	var responseHandler func(string) string
+	for _, m := range cg.modes {
+		prefix := m.Prefix()
+		if !strings.HasPrefix(prompt, prefix) {
+			continue
+		}
+		prompt = strings.TrimPrefix(prompt, prefix)
+		prompt = m.HandlePrompt(prompt)
+
+		responseHandler = m.HandleResponse
+	}
+	if responseHandler == nil {
 		return "", fmt.Errorf("no prefix")
 	}
 
@@ -52,20 +69,12 @@ func (cg *ChatGPT) GenerateResponse(ctx context.Context, prompt string) (string,
 			},
 		},
 	)
-
 	if err != nil {
 		return "", fmt.Errorf("cg.client.CreateChatCompletion: %w", err)
 	}
 
 	responce := resp.Choices[0].Message.Content
-
-	if isBased {
-		divided := strings.Split(responce, "BasedGPT: ")
-
-		if len(divided) == 2 {
-			responce = divided[1]
-		}
-	}
+	responce = responseHandler(responce)
 
 	return responce, nil
 }
