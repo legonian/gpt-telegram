@@ -18,7 +18,7 @@ func NewImam2Mode() (*Imam2Mode, error) {
 	}
 
 	return &Imam2Mode{
-		prefix: "imam2 ",
+		prefix: "Artem ",
 		prompt: string(prompt),
 	}, nil
 }
