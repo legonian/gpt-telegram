@@ -37,12 +37,18 @@ func NewChatGPT(apiKey string) (*ChatGPT, error) {
 		return nil, fmt.Errorf("NewAntiMode: %w", err)
 	}
 
+	imamMode, err := NewImamMode()
+	if err != nil {
+		return nil, fmt.Errorf("NewImamMode: %w", err)
+	}
+
 	return &ChatGPT{
 		client: openai.NewClient(apiKey),
 		modes: []ChatMode{
 			defaultMode,
 			basedMode,
 			antiMode,
+			imamMode,
 		},
 	}, nil
 }
