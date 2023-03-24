@@ -28,7 +28,7 @@ func (m *Imam4Mode) Prefix() string {
 }
 
 func (m *Imam4Mode) HandleResponse(responce string) string {
-	divided := strings.Split(responce, "[BetterDAN]: ")
+	divided := strings.Split(responce, "[Artem]: ")
 
 	if len(divided) == 2 {
 		responce = divided[1]
