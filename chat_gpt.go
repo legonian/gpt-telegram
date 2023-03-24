@@ -42,14 +42,19 @@ func NewChatGPT(apiKey string) (*ChatGPT, error) {
 		return nil, fmt.Errorf("NewImamMode: %w", err)
 	}
 
-	imam2Mode, err := NewImam2Mode()
-	if err != nil {
-		return nil, fmt.Errorf("NewImam2Mode: %w", err)
-	}
+	// imam2Mode, err := NewImam2Mode()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("NewImam2Mode: %w", err)
+	// }
 
 	imam3Mode, err := NewImam3Mode()
 	if err != nil {
 		return nil, fmt.Errorf("NewImam3Mode: %w", err)
+	}
+
+	imam4Mode, err := NewImam4Mode()
+	if err != nil {
+		return nil, fmt.Errorf("NewImam4Mode: %w", err)
 	}
 
 	return &ChatGPT{
@@ -59,8 +64,9 @@ func NewChatGPT(apiKey string) (*ChatGPT, error) {
 			basedMode,
 			antiMode,
 			imamMode,
-			imam2Mode,
+			// imam2Mode,
 			imam3Mode,
+			imam4Mode,
 		},
 	}, nil
 }
