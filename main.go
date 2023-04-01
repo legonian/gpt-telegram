@@ -9,6 +9,8 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
+
+	"gpt-telegram/quran"
 )
 
 func main() {
@@ -26,6 +28,10 @@ func main() {
 }
 
 func app() error {
+	q, err := quran.NewQuran()
+	if err != nil {
+		return fmt.Errorf("quran.NewQuran: %w", err)
+	}
 	chatGPT, err := NewChatGPT(os.Getenv("OPEN_AI_KEY"))
 	if err != nil {
 		return fmt.Errorf("NewChatGPT: %w", err)
@@ -55,14 +61,20 @@ func app() error {
 			update.UpdateID,
 			messageText,
 		)
-
-		reply, err := chatGPT.GenerateResponse(ctx, messageText)
-		if err != nil {
-			if !errors.Is(err, ErrAPI) {
-				continue
+		var reply string
+		switch messageText {
+		case "/random":
+			reply = q.RandomAyah(2)
+		default:
+			reply, err = chatGPT.GenerateResponse(ctx, messageText)
+			if err != nil {
+				if !errors.Is(err, ErrAPI) {
+					continue
+				}
+				reply = "API error"
 			}
-			reply = "API error"
 		}
+
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, reply)
 		msg.ReplyToMessageID = update.Message.MessageID
 
