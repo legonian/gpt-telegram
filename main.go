@@ -64,7 +64,7 @@ func app() error {
 		var reply string
 		switch messageText {
 		case "/random":
-			reply = q.RandomAyah(2)
+			reply = q.RandomAyah(4)
 		default:
 			reply, err = chatGPT.GenerateResponse(ctx, messageText)
 			if err != nil {
